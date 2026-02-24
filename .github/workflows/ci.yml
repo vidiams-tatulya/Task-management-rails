@@ -18,12 +18,12 @@ jobs:
         with:
           bundler-cache: true
 
-      - name: Scan for common Rails security vulnerabilities using static analysis
+      - name: Scan for common Rails security vulnerabilities
         run: bin/brakeman --no-pager
-      
-      - name: Scan for known security vulnerabilities in gems used
+
+      - name: Scan for known security vulnerabilities in gems
         run: bin/bundler-audit
-      
+
   scan_js:
     runs-on: ubuntu-latest
 
@@ -43,6 +43,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       RUBOCOP_CACHE_ROOT: tmp/rubocop
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
@@ -58,11 +59,11 @@ jobs:
           DEPENDENCIES_HASH: ${{ hashFiles('.ruby-version', '**/.rubocop.yml', '**/.rubocop_todo.yml', 'Gemfile.lock') }}
         with:
           path: ${{ env.RUBOCOP_CACHE_ROOT }}
-          key: rubocop-${{ runner.os }}-${{ env.DEPENDENCIES_HASH }}-${{ github.ref_name == github.event.repository.default_branch && github.run_id || 'default' }}
+          key: rubocop-${{ runner.os }}-${{ env.DEPENDENCIES_HASH }}
           restore-keys: |
-            rubocop-${{ runner.os }}-${{ env.DEPENDENCIES_HASH }}-
+            rubocop-${{ runner.os }}-
 
-      - name: Lint code for consistent style
+      - name: Lint code
         run: bin/rubocop -f github
 
   test:
@@ -70,21 +71,20 @@ jobs:
 
     services:
       mysql:
-        image: mysql
+        image: mysql:8.0
         env:
-          MYSQL_ALLOW_EMPTY_PASSWORD: true
+          MYSQL_ROOT_PASSWORD: rootpassword
+          MYSQL_DATABASE: task_management_test
         ports:
           - 3306:3306
-        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
-
-      # redis:
-      #   image: valkey/valkey:8
-      #   ports:
-      #     - 6379:6379
-      #   options: --health-cmd "redis-cli ping" --health-interval 10s --health-timeout 5s --health-retries 5
+        options: >-
+          --health-cmd="mysqladmin ping -prootpassword"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
 
     steps:
-      - name: Install packages
+      - name: Install MySQL client dependencies
         run: sudo apt-get update && sudo apt-get install --no-install-recommends -y default-libmysqlclient-dev
 
       - name: Checkout code
@@ -95,34 +95,33 @@ jobs:
         with:
           bundler-cache: true
 
-      - name: Run tests
+      - name: Run Tests
         env:
           RAILS_ENV: test
-          DATABASE_URL: mysql2://127.0.0.1:3306
-          # RAILS_MASTER_KEY: ${{ secrets.RAILS_MASTER_KEY }}
-          # REDIS_URL: redis://localhost:6379/0
-        run: bin/rails db:test:prepare test
+        run: |
+          bin/rails db:create
+          bin/rails db:schema:load
+          bin/rails test
 
   system-test:
     runs-on: ubuntu-latest
 
     services:
       mysql:
-        image: mysql
+        image: mysql:8.0
         env:
-          MYSQL_ALLOW_EMPTY_PASSWORD: true
+          MYSQL_ROOT_PASSWORD: rootpassword
+          MYSQL_DATABASE: task_management_test
         ports:
           - 3306:3306
-        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
-
-      # redis:
-      #   image: valkey/valkey:8
-      #   ports:
-      #     - 6379:6379
-      #   options: --health-cmd "redis-cli ping" --health-interval 10s --health-timeout 5s --health-retries 5
+        options: >-
+          --health-cmd="mysqladmin ping -prootpassword"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
 
     steps:
-      - name: Install packages
+      - name: Install MySQL client dependencies
         run: sudo apt-get update && sudo apt-get install --no-install-recommends -y default-libmysqlclient-dev
 
       - name: Checkout code
@@ -136,15 +135,15 @@ jobs:
       - name: Run System Tests
         env:
           RAILS_ENV: test
-          DATABASE_URL: mysql2://127.0.0.1:3306
-          # RAILS_MASTER_KEY: ${{ secrets.RAILS_MASTER_KEY }}
-          # REDIS_URL: redis://localhost:6379/0
-        run: bin/rails db:test:prepare test:system
+        run: |
+          bin/rails db:create
+          bin/rails db:schema:load
+          bin/rails test:system
 
-      - name: Keep screenshots from failed system tests
+      - name: Upload screenshots if failure
         uses: actions/upload-artifact@v4
         if: failure()
         with:
           name: screenshots
-          path: ${{ github.workspace }}/tmp/screenshots
+          path: tmp/screenshots
           if-no-files-found: ignore
