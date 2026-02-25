@@ -3,7 +3,8 @@ default: &default
   encoding: utf8mb4
   pool: 5
   username: root
-  password: rootpassword
+  password:
+  host: <%= ENV.fetch("DB_HOST", "127.0.0.1") %>
 
 development:
   <<: *default
@@ -13,7 +14,6 @@ development:
 test:
   <<: *default
   database: task_management_test
-  host: 127.0.0.1
 
 production:
   primary: &primary_production

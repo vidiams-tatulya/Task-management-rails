@@ -8,39 +8,30 @@ on:
 jobs:
   scan_ruby:
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v4
-
       - uses: ruby/setup-ruby@v1
         with:
           bundler-cache: true
-
       - run: bin/brakeman --no-pager
       - run: bin/bundler-audit
 
   scan_js:
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v4
-
       - uses: ruby/setup-ruby@v1
         with:
           bundler-cache: true
-
       - run: bin/importmap audit
 
   lint:
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v4
-
       - uses: ruby/setup-ruby@v1
         with:
           bundler-cache: true
-
       - run: bin/rubocop -f github
 
   test:
@@ -48,14 +39,14 @@ jobs:
 
     services:
       mysql:
-        image: docker.io/library/mysql:8.0.36
+        image: mysql:9
         env:
-          MYSQL_ROOT_PASSWORD: rootpassword
+          MYSQL_ALLOW_EMPTY_PASSWORD: 'yes'
           MYSQL_DATABASE: task_management_test
         ports:
           - 3306:3306
         options: >-
-          --health-cmd="mysqladmin ping -prootpassword"
+          --health-cmd="mysqladmin ping"
           --health-interval=10s
           --health-timeout=5s
           --health-retries=5
@@ -70,13 +61,10 @@ jobs:
       - name: Install MySQL client
         run: sudo apt-get update && sudo apt-get install -y default-libmysqlclient-dev
 
-      - name: Wait for MySQL
-        run: sleep 15
-
       - name: Run Tests
         env:
           RAILS_ENV: test
-          DB_HOST: 127.0.0.1
+          DB_HOST: mysql
         run: |
           bin/rails db:prepare
           bin/rails test
@@ -86,14 +74,14 @@ jobs:
 
     services:
       mysql:
-        image: docker.io/library/mysql:8.0.36
+        image: mysql:9
         env:
-          MYSQL_ROOT_PASSWORD: rootpassword
+          MYSQL_ALLOW_EMPTY_PASSWORD: 'yes'
           MYSQL_DATABASE: task_management_test
         ports:
           - 3306:3306
         options: >-
-          --health-cmd="mysqladmin ping -prootpassword"
+          --health-cmd="mysqladmin ping"
           --health-interval=10s
           --health-timeout=5s
           --health-retries=5
@@ -108,13 +96,10 @@ jobs:
       - name: Install MySQL client
         run: sudo apt-get update && sudo apt-get install -y default-libmysqlclient-dev
 
-      - name: Wait for MySQL
-        run: sleep 15
-
       - name: Run System Tests
         env:
           RAILS_ENV: test
-          DB_HOST: 127.0.0.1
+          DB_HOST: mysql
         run: |
           bin/rails db:prepare
           bin/rails test:system
