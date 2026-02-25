@@ -25,14 +25,24 @@ jobs:
           bundler-cache: true
       - run: bin/importmap audit
 
-  lint:
+    lint:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - uses: ruby/setup-ruby@v1
         with:
+          ruby-version: 3.3.10
           bundler-cache: true
-      - run: bin/rubocop -f github
+
+      - name: Show Ruby version
+        run: ruby -v
+
+      - name: Show Rubocop version
+        run: bundle exec rubocop -V
+
+      - name: Run Rubocop
+        run: bin/rubocop -f github
 
   test:
     runs-on: ubuntu-latest
