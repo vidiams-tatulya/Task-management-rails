@@ -42,7 +42,7 @@ jobs:
         run: bundle exec rubocop -V
 
       - name: Run Rubocop
-        run: bin/rubocop -f github
+      - run: bin/rubocop
 
   test:
     runs-on: ubuntu-latest
