@@ -81,11 +81,11 @@ jobs:
     runs-on: ubuntu-latest
 
     services:
-      mysql:
-        image: mysql:8.0
-        env:
-          MYSQL_ROOT_PASSWORD: rootpassword
-          MYSQL_DATABASE: task_management_test
+  mysql:
+    image: mysql:8.0.36
+    env:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: task_management_test
         ports:
           - 3306:3306
         options: >-
