@@ -48,7 +48,7 @@ jobs:
 
     services:
       mysql:
-        image: mysql:8.0.36
+        image: docker.io/library/mysql:8.0.36
         env:
           MYSQL_ROOT_PASSWORD: rootpassword
           MYSQL_DATABASE: task_management_test
@@ -86,7 +86,7 @@ jobs:
 
     services:
       mysql:
-        image: mysql:8.0.36
+        image: docker.io/library/mysql:8.0.36
         env:
           MYSQL_ROOT_PASSWORD: rootpassword
           MYSQL_DATABASE: task_management_test
