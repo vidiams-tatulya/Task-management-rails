@@ -14,7 +14,9 @@ development:
 test:
   <<: *default
   database: task_management_test
-  host: 127.0.0.1   # CI requires localhost
+  username: root
+  password: rootpassword
+  host: 127.0.0.1
 
 production:
   primary: &primary_production
