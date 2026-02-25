@@ -10,61 +10,34 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v6
+      - uses: actions/checkout@v4
 
-      - name: Set up Ruby
-        uses: ruby/setup-ruby@v1
+      - uses: ruby/setup-ruby@v1
         with:
           bundler-cache: true
 
-      - name: Scan for common Rails security vulnerabilities
-        run: bin/brakeman --no-pager
-
-      - name: Scan for known security vulnerabilities in gems
-        run: bin/bundler-audit
+      - run: bin/brakeman --no-pager
+      - run: bin/bundler-audit
 
   scan_js:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v6
-
-      - name: Set up Ruby
-        uses: ruby/setup-ruby@v1
+      - uses: actions/checkout@v4
+      - uses: ruby/setup-ruby@v1
         with:
           bundler-cache: true
-
-      - name: Scan for security vulnerabilities in JavaScript dependencies
-        run: bin/importmap audit
+      - run: bin/importmap audit
 
   lint:
     runs-on: ubuntu-latest
-    env:
-      RUBOCOP_CACHE_ROOT: tmp/rubocop
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v6
-
-      - name: Set up Ruby
-        uses: ruby/setup-ruby@v1
+      - uses: actions/checkout@v4
+      - uses: ruby/setup-ruby@v1
         with:
           bundler-cache: true
-
-      - name: Prepare RuboCop cache
-        uses: actions/cache@v4
-        env:
-          DEPENDENCIES_HASH: ${{ hashFiles('.ruby-version', '**/.rubocop.yml', '**/.rubocop_todo.yml', 'Gemfile.lock') }}
-        with:
-          path: ${{ env.RUBOCOP_CACHE_ROOT }}
-          key: rubocop-${{ runner.os }}-${{ env.DEPENDENCIES_HASH }}
-          restore-keys: |
-            rubocop-${{ runner.os }}-
-
-      - name: Lint code
-        run: bin/rubocop -f github
+      - run: bin/rubocop -f github
 
   test:
     runs-on: ubuntu-latest
@@ -84,23 +57,24 @@ jobs:
           --health-retries=5
 
     steps:
-      - name: Install MySQL client dependencies
-        run: sudo apt-get update && sudo apt-get install --no-install-recommends -y default-libmysqlclient-dev
+      - uses: actions/checkout@v4
 
-      - name: Checkout code
-        uses: actions/checkout@v6
-
-      - name: Set up Ruby
-        uses: ruby/setup-ruby@v1
+      - uses: ruby/setup-ruby@v1
         with:
           bundler-cache: true
+
+      - name: Install MySQL client
+        run: sudo apt-get update && sudo apt-get install -y default-libmysqlclient-dev
+
+      - name: Wait for MySQL
+        run: sleep 15
 
       - name: Run Tests
         env:
           RAILS_ENV: test
+          DB_HOST: 127.0.0.1
         run: |
-          bin/rails db:create
-          bin/rails db:schema:load
+          bin/rails db:prepare
           bin/rails test
 
   system-test:
@@ -121,23 +95,24 @@ jobs:
           --health-retries=5
 
     steps:
-      - name: Install MySQL client dependencies
-        run: sudo apt-get update && sudo apt-get install --no-install-recommends -y default-libmysqlclient-dev
+      - uses: actions/checkout@v4
 
-      - name: Checkout code
-        uses: actions/checkout@v6
-
-      - name: Set up Ruby
-        uses: ruby/setup-ruby@v1
+      - uses: ruby/setup-ruby@v1
         with:
           bundler-cache: true
+
+      - name: Install MySQL client
+        run: sudo apt-get update && sudo apt-get install -y default-libmysqlclient-dev
+
+      - name: Wait for MySQL
+        run: sleep 15
 
       - name: Run System Tests
         env:
           RAILS_ENV: test
+          DB_HOST: 127.0.0.1
         run: |
-          bin/rails db:create
-          bin/rails db:schema:load
+          bin/rails db:prepare
           bin/rails test:system
 
       - name: Upload screenshots if failure
